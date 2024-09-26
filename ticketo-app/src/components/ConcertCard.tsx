@@ -25,6 +25,7 @@ interface ConcertAvailabilty {
   capacity: number;
   availableTickets: number;
   puchaseLink?: string;
+  reserveLink?: string;
 }
 
 const ConcertCard = (concert: ConcertProps) => {
@@ -44,6 +45,7 @@ const ConcertCard = (concert: ConcertProps) => {
       capacity: data.capacity,
       availableTickets: data.availableTickets,
       puchaseLink: data._links.purchase?.href,
+      reserveLink: data._links.reserve?.href,
     };
 
     setConcertAvailability(concertAvailabiltyData);
@@ -59,6 +61,15 @@ const ConcertCard = (concert: ConcertProps) => {
     }
   };
 
+  const handleReserve = async () => {
+    const res = await fetch(concertAvailability!.reserveLink!, {
+      method: "POST",
+    });
+    console.log("Response status" + res.status);
+    if (res.status == 201) {
+      fetchAvailability();
+    }
+  };
   useEffect(() => {
     if (isOpen) {
       fetchAvailability();
@@ -101,6 +112,12 @@ const ConcertCard = (concert: ConcertProps) => {
                 <Button color="danger" variant="light" onPress={onClose}>
                   Close
                 </Button>
+
+                {concertAvailability?.reserveLink && (
+                  <Button color="secondary" onPress={handleReserve}>
+                    Reserve
+                  </Button>
+                )}
 
                 {concertAvailability?.puchaseLink && (
                   <Button color="primary" onPress={handlePurchase}>
