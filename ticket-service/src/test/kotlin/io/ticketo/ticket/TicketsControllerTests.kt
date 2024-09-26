@@ -34,7 +34,7 @@ class TicketsControllerTests(
     @Test
     fun `should get available tickets`() {
         val concertId = UUID.randomUUID()
-        every { ticketService.availableTickets(concertId) } returns TicketAvailability(concertId, 50, 50)
+        every { ticketService.availableTickets(concertId) } returns TicketAvailability(concertId, 50, 50, true)
 
         mockMvc.perform(get("/api/v1/tickets/concerts/{concertId}/availability", concertId))
             .andExpectAll(
@@ -44,6 +44,7 @@ class TicketsControllerTests(
                     "ticket-availability", preprocessResponse(prettyPrint()), links(
                         halLinks(),
                         linkWithRel("purchase").description("link to the purchase operation"),
+                        linkWithRel("reserve").description("link to the reserve operation"),
                         linkWithRel("self").description("link to self"),
                     ), responseFields(
                         subsectionWithPath("_links").ignored(),

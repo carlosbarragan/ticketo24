@@ -7,6 +7,9 @@ This API delivers information about ticket availability for a specific concert.
 A ticket can be purchased if the `link` `purchase` is present in the response.
 Otherwise, a purchased cannot be performed.
 
+A ticket can be reserved only if the `link` `reserve` is present in the response.
+Otherwise, a reservation cannot be performed.
+
 ==== Request
 
 include::{snippets}/tickets-api/ticket-availability/http-request.adoc[]

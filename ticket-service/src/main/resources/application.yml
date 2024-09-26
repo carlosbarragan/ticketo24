@@ -8,3 +8,7 @@ spring:
 services:
   concerts:
     url: "http://localhost:8081/api/v1"
+features:
+  reservation:
+    enabled: true
+    minimumTicketAvailability: 20

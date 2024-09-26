@@ -6,19 +6,24 @@ import io.ticketo.ticket.persistence.PurchasedTicketsRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 import java.util.UUID
 
 @Component
 class TicketService(
     private val purchasedTicketsRepository: PurchasedTicketsRepository,
-    private val concertClient: ConcertClient
+    private val concertClient: ConcertClient,
+    private val featureService: FeatureService
 ) {
 
     fun availableTickets(concertId: UUID): TicketAvailability {
         val concert = concertClient.fetchConcertById(concertId)
         val purchasedTickets = purchasedTicketsRepository.countByConcertId(concertId)
         val availableTickets = concert.capacity - purchasedTickets
-        return TicketAvailability(concertId, concert.capacity, availableTickets)
+        val isReservationPossible =
+            featureService.isReservationEnabled && availableTickets >= featureService.minimumTicketAvailability
+
+        return TicketAvailability(concertId, concert.capacity, availableTickets, isReservationPossible)
     }
 
     @Transactional
@@ -28,18 +33,43 @@ class TicketService(
             throw NoMoreTicketsAvailableException("No more tickets available for concert: $concertId")
         }
 
-        val purchasedTicket = PurchasedTicket(concertId = concertId)
+        val purchasedTicket = PurchasedTicket(concertId = concertId, purchasedAt = Instant.now())
         return purchasedTicketsRepository.save(purchasedTicket)
     }
+
+    @Transactional
+    fun reserveTicketFor(concertId: UUID): PurchasedTicket {
+        if (!featureService.isReservationEnabled) {
+            throw ReservationNotPossibleException("Reservation not possible at the moment")
+        }
+        val ticketAvailability = availableTickets(concertId)
+        if (ticketAvailability.availableTickets <= 0) {
+            throw NoMoreTicketsAvailableException("No more tickets available for concert: $concertId")
+        }
+        if (ticketAvailability.availableTickets < featureService.minimumTicketAvailability) {
+            throw NoMoreReservationAvailableException("No more reservations are available")
+        }
+
+        val purchasedTicket = PurchasedTicket(concertId = concertId, reservedAt = Instant.now())
+        return purchasedTicketsRepository.save(purchasedTicket)
+    }
+
 
     fun getPurchasedTicketById(ticketId: UUID): PurchasedTicket = purchasedTicketsRepository.findByIdOrNull(ticketId)
         ?: throw TicketNotFoundException("No ticket found for $ticketId")
 }
 
 
-class TicketAvailability(val concertId: UUID, val capacity: Int, val availableTickets: Long) {
+class TicketAvailability(
+    val concertId: UUID,
+    val capacity: Int,
+    val availableTickets: Long,
+    val isReservationPossible: Boolean
+) {
     val isPurchasable = availableTickets > 0
 }
 
 class NoMoreTicketsAvailableException(msg: String) : RuntimeException(msg)
 class TicketNotFoundException(msg: String) : RuntimeException(msg)
+class ReservationNotPossibleException(msg: String) : RuntimeException(msg)
+class NoMoreReservationAvailableException(msg: String) : RuntimeException(msg)

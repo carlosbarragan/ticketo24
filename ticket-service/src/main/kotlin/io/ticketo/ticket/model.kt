@@ -11,5 +11,6 @@ import java.util.UUID
 class PurchasedTicket(
     @Id val id: UUID? = null,
     @Column("concert_id") val concertId: UUID,
-    val purchasedAt: Instant = Instant.now()
+    val purchasedAt: Instant? = null,
+    val reservedAt: Instant? = null
 )

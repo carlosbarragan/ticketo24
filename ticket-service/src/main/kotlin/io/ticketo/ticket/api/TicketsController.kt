@@ -28,15 +28,27 @@ class TicketsController(
         if (ticketAvailability.isPurchasable) {
             ticketAvailabilityDto += linkTo<TicketsController> { purchaseTicket(concertId) }.withRel("purchase")
         }
+        if (ticketAvailability.isReservationPossible) {
+            ticketAvailabilityDto += linkTo<TicketsController> { reserveTicket(concertId) }.withRel("reserve")
+        }
         return ticketAvailabilityDto
     }
 
     @PostMapping("/concerts/{concertId}/ticket")
     fun purchaseTicket(@PathVariable concertId: UUID): ResponseEntity<PurchasedTicketDto> {
         val purchasedTicket = ticketService.purchaseTicketFor(concertId)
+        return response(purchasedTicket)
+    }
+
+    @PostMapping("/concerts/{concertId}/reservation")
+    fun reserveTicket(@PathVariable concertId: UUID): ResponseEntity<PurchasedTicketDto> {
+        val purchasedTicket = ticketService.reserveTicketFor(concertId)
+        return response(purchasedTicket)
+    }
+
+    private fun response(purchasedTicket: PurchasedTicket): ResponseEntity<PurchasedTicketDto> {
         val purchasedTicketDto = purchasedTicket.toDtoWithSelfLink()
         val locationUri = selfRefLinkForTicket(purchasedTicketDto.ticketId).toUri()
-
         return ResponseEntity.created(locationUri).body(purchasedTicketDto)
     }
 
@@ -52,9 +64,10 @@ fun TicketAvailability.toDtoWithSelfLink(): TicketAvailabilityDto =
         it += linkTo<TicketsController> { fetchAvailableTicketsForConcert(concertId) }.withSelfRel()
     }
 
-fun PurchasedTicket.toDtoWithSelfLink(): PurchasedTicketDto = PurchasedTicketDto(id!!, concertId, purchasedAt).apply {
-    add(selfRefLinkForTicket(ticketId))
-}
+fun PurchasedTicket.toDtoWithSelfLink(): PurchasedTicketDto =
+    PurchasedTicketDto(id!!, concertId, purchasedAt, reservedAt).apply {
+        add(selfRefLinkForTicket(ticketId))
+    }
 
 fun selfRefLinkForTicket(ticketId: UUID): Link =
     linkTo<TicketsController> { fetchTicket(ticketId) }.withRel("self")
@@ -63,7 +76,12 @@ operator fun <T : RepresentationModel<T>> RepresentationModel<T>.plusAssign(link
     add(link)
 }
 
-open class PurchasedTicketDto(val ticketId: UUID, val concertId: UUID, val purchasedAt: Instant) :
+open class PurchasedTicketDto(
+    val ticketId: UUID,
+    val concertId: UUID,
+    val purchasedAt: Instant?,
+    val reservedAt: Instant?
+) :
     RepresentationModel<PurchasedTicketDto>()
 
 open class TicketAvailabilityDto(
