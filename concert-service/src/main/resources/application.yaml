@@ -1,0 +1,11 @@
+ktor:
+  application:
+    modules:
+      - io.ticketo.concert.ApplicationKt.module
+  deployment:
+    port: 8081
+database:
+  url: "jdbc:postgresql://localhost:5432/concertdb"
+  driver: "org.postgresql.Driver"
+  user: "postgres"
+  password: "postgres"

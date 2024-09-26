@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: ticket-service
+  datasource:
+    url: "jdbc:postgresql://localhost:5431/ticketsdb"
+    username: postgres
+    password: postgres
+services:
+  concerts:
+    url: "http://localhost:8081/api/v1"

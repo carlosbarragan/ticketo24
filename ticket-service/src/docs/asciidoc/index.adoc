@@ -1,0 +1,27 @@
+= Ticket Service Documentation
+
+== Ticket Availability
+
+This API delivers information about ticket availability for a specific concert.
+
+A ticket can be purchased if the `link` `purchase` is present in the response.
+Otherwise, a purchased cannot be performed.
+
+==== Request
+
+include::{snippets}/tickets-api/ticket-availability/http-request.adoc[]
+
+==== Response
+
+.Example Response
+include::{snippets}/tickets-api/ticket-availability/http-response.adoc[]
+
+.Example Response Body
+include::{snippets}/tickets-api/ticket-availability/response-body.adoc[]
+
+.Response fields
+include::{snippets}/tickets-api/ticket-availability/response-fields.adoc[]
+
+.Hypermedia links
+include::{snippets}/tickets-api/ticket-availability/links.adoc[]
+
