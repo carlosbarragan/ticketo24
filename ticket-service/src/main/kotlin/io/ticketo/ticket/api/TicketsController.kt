@@ -1,6 +1,7 @@
 package io.ticketo.ticket.api
 
 import io.ticketo.ticket.PurchasedTicket
+import io.ticketo.ticket.business.TicketAvailability
 import io.ticketo.ticket.business.TicketService
 import org.springframework.hateoas.Link
 import org.springframework.hateoas.RepresentationModel
@@ -22,15 +23,12 @@ class TicketsController(
 
     @GetMapping("/concerts/{concertId}/availability")
     fun fetchAvailableTicketsForConcert(@PathVariable concertId: UUID): TicketAvailabilityDto {
-        return ticketService.availableTickets(concertId)
-            .let {
-                TicketAvailabilityDto(it.concertId, it.capacity, it.availableTickets)
-            }.also { dto ->
-                dto += linkTo<TicketsController> { fetchAvailableTicketsForConcert(concertId) }.withSelfRel()
-                if (dto.availableTickets > 0) {
-                    dto += linkTo<TicketsController> { purchaseTicket(concertId) }.withRel("purchase")
-                }
-            }
+        val ticketAvailability = ticketService.availableTickets(concertId)
+        val ticketAvailabilityDto = ticketAvailability.toDtoWithSelfLink()
+        if (ticketAvailability.isPurchasable) {
+            ticketAvailabilityDto += linkTo<TicketsController> { purchaseTicket(concertId) }.withRel("purchase")
+        }
+        return ticketAvailabilityDto
     }
 
     @PostMapping("/concerts/{concertId}/ticket")
@@ -48,6 +46,11 @@ class TicketsController(
     }
 
 }
+
+fun TicketAvailability.toDtoWithSelfLink(): TicketAvailabilityDto =
+    TicketAvailabilityDto(concertId, capacity, availableTickets).also {
+        it += linkTo<TicketsController> { fetchAvailableTicketsForConcert(concertId) }.withSelfRel()
+    }
 
 fun PurchasedTicket.toDtoWithSelfLink(): PurchasedTicketDto = PurchasedTicketDto(id!!, concertId, purchasedAt).apply {
     add(selfRefLinkForTicket(ticketId))
@@ -67,5 +70,4 @@ open class TicketAvailabilityDto(
     val concertId: UUID,
     val capacity: Int,
     val availableTickets: Long,
-    val foo: String = "foo"
 ) : RepresentationModel<TicketAvailabilityDto>()

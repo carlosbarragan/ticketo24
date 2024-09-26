@@ -37,6 +37,9 @@ class TicketService(
 }
 
 
-class TicketAvailability(val concertId: UUID, val capacity: Int, val availableTickets: Long)
+class TicketAvailability(val concertId: UUID, val capacity: Int, val availableTickets: Long) {
+    val isPurchasable = availableTickets > 0
+}
+
 class NoMoreTicketsAvailableException(msg: String) : RuntimeException(msg)
 class TicketNotFoundException(msg: String) : RuntimeException(msg)
